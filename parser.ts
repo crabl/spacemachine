@@ -39,7 +39,8 @@ export function when(subject: string) {
     exceptions = subjects;
     return {
       wishes,
-      wish: wishes
+      wish: wishes,
+      is: { a: to }
     };
   }
 
@@ -55,7 +56,8 @@ export function when(subject: string) {
   return {
     except,
     wishes,
-    wish: wishes
+    wish: wishes,
+    is: { a: to }
   }
 }
 
@@ -87,23 +89,27 @@ export function claim(subject: string) {
 
 // engine
 function _grantWishes(wishes: Wish[], granters: Granter[]) {
-  wishes.forEach((wish: Wish) => {
-    const applicable_granters = granters.filter((granter: Granter) => {
-      const has_same_action = granter.action === wish.action;
-      const has_same_subject = granter.subject === wish.subject;
-      const grants_for_anyone = !granter.subject;
-      const can_grant_to_subject = !granter.exceptions.includes(wish.subject);
+  const wish = wishes.shift();
 
-      const can_grant_wish = can_grant_to_subject && has_same_action && (has_same_subject || grants_for_anyone);
-      return can_grant_wish;
-    });
+  const applicable_granters = granters.filter((granter: Granter) => {
+    const has_same_action = granter.action === wish.action;
+    const has_same_subject = granter.subject === wish.subject;
+    const grants_for_anyone = !granter.subject;
+    const can_grant_to_subject = !granter.exceptions.includes(wish.subject);
 
-    applicable_granters.forEach((granter: Granter) => {
-      granter.grant.bind({
-        subject: wish.subject
-      })(wish.params);
-    });
+    const can_grant_wish = can_grant_to_subject && has_same_action && (has_same_subject || grants_for_anyone);
+    return can_grant_wish;
   });
+
+  applicable_granters.forEach((granter: Granter) => {
+    granter.grant.bind({
+      subject: wish.subject
+    })(wish.params);
+  });
+}
+
+export function hasWishes() {
+  return all_wishes.length;
 }
 
 export function grantWishes() {
