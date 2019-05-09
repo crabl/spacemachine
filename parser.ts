@@ -21,6 +21,7 @@ function wish(subject: string) {
 interface Granter {
   action: string;
   subject: string;
+  exceptions: string[];
   grant: Function;
 }
 
@@ -28,17 +29,31 @@ const wish_granters: Granter[] = [];
 
 const anyone = 'anyone';
 function when(subject: string) {
+  var exceptions = [];
+
   const wishes = {
-    to(doSomething: string, granter: Function) {
-      wish_granters.push({
-        action: doSomething,
-        subject: subject === anyone ? null : subject,
-        grant: granter
-      })
-    }
+    to
   };
 
+  function except(...subjects) {
+    exceptions = subjects;
+    return {
+      wishes,
+      wish: wishes
+    };
+  }
+
+  function to(doSomething: string, granter: Function) {
+    wish_granters.push({
+      action: doSomething,
+      subject: subject === anyone ? null : subject,
+      exceptions,
+      grant: granter
+    })
+  }
+
   return {
+    except,
     wishes,
     wish: wishes
   }
@@ -73,6 +88,7 @@ function claim(subject: string) {
 const i = 'i';
 const say = 'say';
 const chris = 'chris';
+const not_chris = 'not_chris';
 const have_colored_hair = 'have_colored_hair';
 const blue = 'blue';
 
@@ -85,9 +101,13 @@ when(chris).wishes.to(say, function(words) {
   console.log('more specifically, chris says:', ...words);
 });
 
-when(anyone).wishes.to(have_colored_hair, function(color) {
-
+when(anyone).except(chris).wishes.to(have_colored_hair, function (color) {
+  console.log(color + ' really suits you, ' + this.subject);
 })
+
+when(chris).wishes.to(have_colored_hair, function(color) {
+  console.log('silly crabl, you can\'t have ' + color + ' hair!')
+});
 
 wish(i).can(say, 'hello');
 wish(chris).can(say, 'yo wassup homiessss')
@@ -98,7 +118,8 @@ const legs = 'legs';
 const torso = 'torso';
 claim(chris).is.a(person).with(hair, legs, torso);
 
-wish(chris).can(have_colored_hair, blue)
+wish(chris).can(have_colored_hair, blue);
+wish(not_chris).can(have_colored_hair, blue);
 
 // engine
 all_wishes.forEach((wish: Wish) => {
@@ -106,8 +127,9 @@ all_wishes.forEach((wish: Wish) => {
     const has_same_action = granter.action === wish.action;
     const has_same_subject = granter.subject === wish.subject;
     const grants_for_anyone = !granter.subject;
+    const can_grant_to_subject = !granter.exceptions.includes(wish.subject);
 
-    const can_grant_wish = has_same_action && (has_same_subject || grants_for_anyone);
+    const can_grant_wish = can_grant_to_subject && has_same_action && (has_same_subject || grants_for_anyone);
     return can_grant_wish;
   });
 
