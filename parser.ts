@@ -76,17 +76,17 @@ const chris = 'chris';
 const have_colored_hair = 'have_colored_hair';
 const blue = 'blue';
 
-when(i).wish.to(say, (words) => {
+when(anyone).wishes.to(say, function(words) {
   // have to find a way to access the subject in here
-  console.log(...words);
+  console.log(this.subject, 'says:', ...words);
 });
 
-when(chris).wishes.to(say, (words) => {
-  console.log('chris says:', ...words);
+when(chris).wishes.to(say, function(words) {
+  console.log('more specifically, chris says:', ...words);
 });
 
-when(anyone).wishes.to(have_colored_hair, (color) => {
-  
+when(anyone).wishes.to(have_colored_hair, function(color) {
+
 })
 
 wish(i).can(say, 'hello');
@@ -112,7 +112,9 @@ all_wishes.forEach((wish: Wish) => {
   });
 
   granters.forEach((granter: Granter) => {
-    granter.grant(wish.params);
+    granter.grant.bind({
+      subject: wish.subject
+    })(wish.params);
   });
 });
 
